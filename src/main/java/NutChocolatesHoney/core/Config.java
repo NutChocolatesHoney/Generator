@@ -17,9 +17,9 @@ public class Config {
 
   private DbInfo dbInfo;
 
-  private String modulePath;
-
   private List<CreateInfo> createInfoList;
+
+  private List<String> autoFillColumns;
 
   private Map<String, Object> commonParams;
 
@@ -56,11 +56,11 @@ public class Config {
   @Data
   public static class CreateInfo {
     private String templateName;
-    private String packageName;
     private String outNamePrefix;
     private String outNameSuffix;
     private boolean removeTablePrefix;
     private String modulePath;
+    private String outPath;
     private Map<String, String> params;
     public String getOutNamePrefix() {
       return Optional.ofNullable(outNamePrefix).orElse("");

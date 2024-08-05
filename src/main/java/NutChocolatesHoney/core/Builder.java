@@ -3,6 +3,7 @@ package NutChocolatesHoney.core;
 import NutChocolatesHoney.core.definition.ColumnDefinition;
 import NutChocolatesHoney.core.definition.TableDefinition;
 import NutChocolatesHoney.core.enumeration.TableType;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import freemarker.template.Configuration;
@@ -83,7 +84,7 @@ public class Builder {
         String tableRemarks = tableSet.getString("REMARKS");
 
         // 创建表定义
-        TableDefinition table = new TableDefinition();
+        TableDefinition table = new TableDefinition(config);
         if (StrUtil.isNotBlank(connection.getSchema())) {
           table.setSchema(connection.getSchema().trim());
         }
@@ -168,9 +169,7 @@ public class Builder {
         .getCreateInfoList()
         .forEach(
             it -> {
-              if (StrUtil.isEmpty(it.getTemplateName())
-                  || StrUtil.isEmpty(it.getPackageName())
-                  || StrUtil.isEmpty(it.getOutNameSuffix())) {
+              if (StrUtil.isEmpty(it.getTemplateName()) || StrUtil.isEmpty(it.getOutNameSuffix())) {
                 log.info("---缺少必须生成信息--");
               }
             });
@@ -192,6 +191,12 @@ public class Builder {
     List<Config.CreateInfo> createInfoList = config.getCreateInfoList();
 
     for (Config.CreateInfo it : createInfoList) {
+
+      if (Objects.equals(it.getTemplateName(), "enum.ftl")
+          && CollectionUtil.isEmpty(table.getEnumColumn())) {
+        continue;
+      }
+
       Template modelTemplate;
       try {
         modelTemplate = configuration.getTemplate(it.getTemplateName());
@@ -205,20 +210,17 @@ public class Builder {
       } else {
         fileName = it.getOutNamePrefix() + table.getClassName() + fileName;
       }
-      String modulePath;
-      if (StrUtil.isNotEmpty(it.getModulePath())) {
-        modulePath = it.getModulePath();
-      } else {
-        modulePath = config.getModulePath();
-      }
+      it.setModulePath(StrUtil.format(it.getModulePath(), config.getCommonParams()));
+      String outPath =
+          StrUtil.format(
+              (StrUtil.isNotEmpty(it.getOutPath())) ? it.getOutPath() : config.getOutPath(),
+              config.getCommonParams());
+
       File file =
           new File(
               String.format(
-                  "%s%s/%s/%s",
-                  config.getOutPath(),
-                  modulePath.replaceAll("\\.", "/"),
-                  it.getPackageName(),
-                  fileName));
+                      "%s/%s/%s", outPath, it.getModulePath().replaceAll("\\.", "/"), fileName)
+                  .replaceAll("//", "/"));
       doExecute(table, modelTemplate, file, it);
     }
   }
@@ -236,7 +238,6 @@ public class Builder {
       }
       Map<String, Object> commonParams = config.getCommonParams();
       commonParams.put("now", DateUtil.now());
-      commonParams.put("modulePath", config.getModulePath());
 
       out = new FileWriter(file);
       Map<String, Object> data = new HashMap<>();
@@ -245,9 +246,9 @@ public class Builder {
       data.put("common", commonParams);
       data.put("params", createInfo.getParams());
       template.process(data, out);
-      log.info("---文件[" + file.getName() + "]创建成功---");
+      log.info("---文件[{}]创建成功---", file.getName());
     } catch (Exception e) {
-      log.error("---文件[" + file.getName() + "]创建失败---", e);
+      log.error("---文件[{}]创建失败---", file.getName(), e);
     } finally {
       try {
         Objects.requireNonNull(out).close();

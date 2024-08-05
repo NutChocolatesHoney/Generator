@@ -1,5 +1,6 @@
 package NutChocolatesHoney.core.definition;
 
+import NutChocolatesHoney.core.Config;
 import NutChocolatesHoney.core.common.CoreUtils;
 import NutChocolatesHoney.core.enumeration.TableType;
 import java.io.IOException;
@@ -13,6 +14,8 @@ import org.apache.commons.lang3.StringUtils;
 public class TableDefinition {
 
   private static final String DEL_FLAG = "active";
+
+  private final Config config;
 
   /** Schema */
   private String schema;
@@ -38,7 +41,7 @@ public class TableDefinition {
 
   private Set<String> imports;
 
-  /** 非主键字段集合 */
+  /** 主键字段集合 */
   private List<ColumnDefinition> primaryKeyList = new ArrayList<>();
 
   /** 非主键字段集合 */
@@ -124,7 +127,7 @@ public class TableDefinition {
     return list != null && !list.isEmpty();
   }
 
-  public List<ColumnDefinition> getEnumColumn() throws IOException {
+  public List<ColumnDefinition> getEnumColumn() {
     List<ColumnDefinition> res =
         getAllColumn().stream().filter(ColumnDefinition::getIsEnum).collect(Collectors.toList());
     for (ColumnDefinition x : res) {
@@ -133,7 +136,20 @@ public class TableDefinition {
     return res;
   }
 
+  public List<ColumnDefinition> getEnumColumnList() {
+    List<ColumnDefinition> res =
+            getAllColumn().stream().filter(ColumnDefinition::getIsEnum).collect(Collectors.toList());
+    for (ColumnDefinition x : res) {
+      x.setEnumData();
+    }
+    return res;
+  }
+
   public boolean getIsLogicalDel() {
     return getAllColumn().stream().anyMatch(it-> Objects.equals(it.getColumnName(), DEL_FLAG));
+  }
+
+  public List<ColumnDefinition> getCommonColumn() {
+    return getAllColumn().stream().filter(it->!config.getAutoFillColumns().contains(it.getJavaFieldName())).collect(Collectors.toList());
   }
 }
