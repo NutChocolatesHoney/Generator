@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import cn.hutool.core.collection.CollectionUtil;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -150,6 +152,8 @@ public class TableDefinition {
   }
 
   public List<ColumnDefinition> getCommonColumn() {
+    if (CollectionUtil.isEmpty(config.getAutoFillColumns()))
+      return getAllColumn();
     return getAllColumn().stream().filter(it->!config.getAutoFillColumns().contains(it.getJavaFieldName())).collect(Collectors.toList());
   }
 }

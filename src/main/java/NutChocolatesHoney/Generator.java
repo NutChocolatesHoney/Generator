@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class Generator {
     public static void main(String[] args) throws IOException {
-        Builder builder = BuilderFactory.createBuilder("real");
+        Builder builder = BuilderFactory.createBuilder("webank");
         builder.build();
     }
 }
